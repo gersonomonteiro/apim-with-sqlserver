@@ -1,0 +1,66 @@
+version: '2.4'
+services:
+  sqlserver:
+      image: mcr.microsoft.com/mssql/server:2022-latest
+      container_name: sqlserver_db
+      ports:
+        - "1433:1433"
+      healthcheck:
+        test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Wso2@Sql2026!' -C -Q 'SELECT 1' || exit 1"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+        start_period: 10s
+      entrypoint: /bin/bash /u01/entrypoint.sh
+      environment:
+        - ACCEPT_EULA=Y
+        - MSSQL_SA_PASSWORD=Wso2@Sql2026!
+        - MSSQL_PID=Developer
+      volumes:
+        - mssql_data:/var/opt/mssql
+        - ./conf/sqlserver/scripts/entrypoint.sh:/u01/entrypoint.sh
+        - ./conf/sqlserver/scripts/init-db.sql:/u01/init-db.sql
+        - ./conf/sqlserver/scripts:/opt/wso2-scripts
+      networks:
+        - sql-network
+  api-manager:
+    build: ./dockerfiles/apim
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:9763/services/Version"]
+      interval: 10s
+      start_period: 180s
+      retries: 20
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    volumes:
+      - ./conf/apim:/home/wso2carbon/wso2-config-volume
+    ports:
+      - "9443:9443"
+      - "8280:8280"
+      - "8243:8243"
+    networks:
+      - sql-network
+  micro-integrator:
+    build: ./dockerfiles/mi
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8253"]
+      interval: 10s
+      start_period: 30s
+      retries: 10
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      api-manager:
+        condition: service_healthy
+    volumes:
+      - ./conf/mi:/home/wso2carbon/wso2-config-volume
+    ports:
+      - "8290:8290"
+      - "8253:8253"
+networks:
+  sql-network:
+    driver: bridge
+
+volumes:
+  mssql_data:

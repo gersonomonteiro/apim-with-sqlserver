@@ -1,0 +1,1 @@
+# WSO2 API Manager 4.6.0 + SQL Server 2022 (Docker)
