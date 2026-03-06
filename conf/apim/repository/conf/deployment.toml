@@ -18,7 +18,7 @@ type = "mssql"
 url = "jdbc:sqlserver://sqlserver:1433;databaseName=WSO2AM_DB;encrypt=false;trustServerCertificate=true"
 username = "wso2carbon"
 password = "Wso2carbon@2026"
-drive = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
 
 [database.shared_db]
 type = "mssql"
